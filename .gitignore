@@ -1,0 +1,82 @@
+# Python
+*.py[cod]
+*$py.class
+__pycache__/
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# Data files
+*.csv
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.joblib
+*.npy
+*.npz
+*.parquet
+
+# Model files (large files that shouldn't be in git)
+*.pth
+*.pt
+*.ckpt
+*.pb
+*.h5
+*.keras
+*.onnx
+*.tflite
+*.safetensors
+models/
+checkpoints/
+saved_models/
+
+# Datasets (too large for git)
+data/raw/
+data/processed/
+datasets/
+*.tfrecord
+
+# Logs and results
+logs/
+*.log
+tensorboard/
+runs/
+wandb/
+mlruns/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+
+# Large media files
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wav
+*.mp3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
