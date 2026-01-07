@@ -1,0 +1,257 @@
+{
+  "task_type": "bayesian_predictive_modeling",
+  "project_name": "IoT Environmental Sensor Telemetry - Bayesian Prediction System",
+  
+  "dataset_description": {
+    "source": "Kaggle - Environmental Sensor Data (132k records)",
+    "total_records": 405184,
+    "format": "CSV time-series data",
+    "columns": {
+      "ts": {
+        "type": "float64",
+        "description": "Unix epoch timestamp",
+        "role": "temporal_index"
+      },
+      "device": {
+        "type": "string",
+        "description": "Device MAC address identifier",
+        "role": "categorical_feature",
+        "unique_devices": "multiple IoT sensors"
+      },
+      "co": {
+        "type": "float64",
+        "description": "Carbon monoxide concentration levels",
+        "role": "predictor_variable",
+        "unit": "ppm_normalized"
+      },
+      "humidity": {
+        "type": "float64",
+        "description": "Relative humidity percentage",
+        "role": "predictor_variable",
+        "unit": "percentage"
+      },
+      "light": {
+        "type": "boolean",
+        "description": "Light/motion detection binary indicator",
+        "role": "binary_predictor"
+      },
+      "lpg": {
+        "type": "float64",
+        "description": "Liquefied petroleum gas concentration",
+        "role": "predictor_variable",
+        "unit": "ppm_normalized"
+      },
+      "motion": {
+        "type": "boolean",
+        "description": "Motion detection binary indicator",
+        "role": "binary_predictor"
+      },
+      "smoke": {
+        "type": "float64",
+        "description": "Smoke particle concentration",
+        "role": "predictor_variable",
+        "unit": "ppm_normalized"
+      },
+      "temp": {
+        "type": "float64",
+        "description": "Temperature in Celsius",
+        "role": "target_variable_primary",
+        "unit": "celsius"
+      }
+    }
+  },
+
+  "modeling_objective": {
+    "primary_goal": "Build a Bayesian prediction model to forecast temperature based on environmental sensor readings",
+    "secondary_goals": [
+      "Detect anomalies in sensor readings using posterior predictive checks",
+      "Quantify uncertainty in predictions through credible intervals",
+      "Compare multiple model architectures using Bayesian Model Averaging",
+      "Identify device-specific behavioral patterns"
+    ],
+    "business_value": "Enable proactive environmental monitoring and early warning systems for industrial/residential IoT deployments"
+  },
+
+  "bayesian_methodology": {
+    "framework": "Full Bayesian inference with probabilistic predictions",
+    
+    "step_1_prior_distribution": {
+      "description": "Define prior beliefs about model parameters before observing data",
+      "requirements": [
+        "Specify priors for regression coefficients (temperature predictors)",
+        "Use weakly informative priors based on domain knowledge (e.g., Normal(20, 5) for baseline temperature)",
+        "Define hierarchical priors for device-specific effects (random effects per device)",
+        "Set priors for variance/precision parameters (e.g., Half-Normal or Inverse-Gamma)",
+        "Consider correlation structure in sensor readings"
+      ],
+      "implementation_guidance": "Use conjugate priors where possible (Normal-Inverse-Gamma for linear models) or weakly informative priors for robustness"
+    },
+
+    "step_2_likelihood": {
+      "description": "Define probability of observed data given parameter values",
+      "requirements": [
+        "Model temperature as continuous outcome: Normal likelihood with mean μ and variance σ²",
+        "Linear predictor: μ = β₀ + β₁(humidity) + β₂(co) + β₃(lpg) + β₄(smoke) + device_effect",
+        "Account for temporal autocorrelation in time-series structure",
+        "Include interaction terms between sensors (e.g., humidity × temperature correlation)",
+        "Model heteroscedasticity if variance changes across conditions"
+      ],
+      "model_forms_to_consider": [
+        "Bayesian Linear Regression",
+        "Bayesian Hierarchical Model (device-level random effects)",
+        "Bayesian Time Series (AR/ARMA components)",
+        "Bayesian Gaussian Process for non-linear relationships"
+      ]
+    },
+
+    "step_3_bayes_theorem_posterior": {
+      "description": "Combine prior and likelihood to obtain posterior distribution",
+      "formula": "P(θ|Data) ∝ P(Data|θ) × P(θ)",
+      "requirements": [
+        "Use MCMC sampling (Hamiltonian Monte Carlo / NUTS) to approximate posterior when analytical solution unavailable",
+        "Run multiple chains (4+) for convergence diagnostics",
+        "Check R-hat < 1.01 for all parameters to ensure convergence",
+        "Examine trace plots and effective sample sizes (ESS > 400 per chain)",
+        "Extract posterior distributions for all parameters: coefficients, variance, device effects"
+      ],
+      "inference_methods": [
+        "Markov Chain Monte Carlo (MCMC) - PyMC, Stan, JAGS",
+        "Variational Inference for faster approximation",
+        "Exact analytical solution for conjugate models"
+      ]
+    },
+
+    "step_4_posterior_predictive_distribution": {
+      "description": "Generate probabilistic forecasts by sampling from posterior to predict new observations",
+      "requirements": [
+        "For each posterior sample of parameters θ, generate predictions: ỹ ~ P(y|θ, X_new)",
+        "Create 1000+ posterior predictive samples for each test observation",
+        "Compute prediction intervals: 50%, 80%, 95% credible intervals",
+        "Calculate expected prediction: E[ỹ|Data] = mean of posterior predictive samples",
+        "Assess prediction uncertainty: wider intervals = higher uncertainty"
+      ],
+      "outputs": [
+        "Point predictions (posterior mean or median)",
+        "Credible intervals (quantile-based uncertainty bounds)",
+        "Full predictive distribution plots",
+        "Posterior predictive checks: compare simulated vs observed data distributions"
+      ]
+    },
+
+    "step_5_bayesian_model_averaging": {
+      "description": "Combine predictions from multiple candidate models weighted by posterior probability",
+      "requirements": [
+        "Fit 3-5 candidate models with different feature sets or structures",
+        "Calculate model evidence P(Data|Model) using WAIC, LOO-CV, or marginal likelihood",
+        "Compute model weights: w_i = P(Model_i|Data) ∝ P(Data|Model_i) × P(Model_i)",
+        "Ensemble prediction: ŷ_BMA = Σ w_i × ŷ_i across all models",
+        "Report model selection uncertainty and individual model contributions"
+      ],
+      "candidate_models": [
+        "Model 1: Linear regression with all sensors",
+        "Model 2: Hierarchical model with device random effects",
+        "Model 3: Reduced model (top 3 sensors by correlation)",
+        "Model 4: Interaction model (humidity × other sensors)",
+        "Model 5: Time-series model with AR(1) component"
+      ],
+      "evaluation_criteria": [
+        "WAIC (Widely Applicable Information Criterion)",
+        "LOO-CV (Leave-One-Out Cross-Validation)",
+        "Posterior predictive accuracy on holdout set"
+      ]
+    }
+  },
+
+  "technical_implementation": {
+    "recommended_libraries": {
+      "python": [
+        "PyMC (Bayesian modeling and MCMC sampling)",
+        "Bambi (high-level Bayesian linear models)",
+        "ArviZ (Bayesian inference visualization and diagnostics)",
+        "NumPy/Pandas (data manipulation)",
+        "Matplotlib/Seaborn (plotting)",
+        "SciPy (statistical functions)"
+      ],
+      "alternative": [
+        "Stan (via PyStan/CmdStanPy)",
+        "TensorFlow Probability",
+        "Scikit-learn (for baseline comparisons)"
+      ]
+    },
+    
+    "data_preprocessing": [
+      "Convert Unix timestamp to datetime for temporal analysis",
+      "Standardize continuous predictors (z-score normalization)",
+      "Encode boolean features as 0/1",
+      "Handle any missing values (forward-fill or interpolation for time-series)",
+      "Split data: 70% train, 15% validation, 15% test (chronological split)",
+      "Create device identifier encoding for hierarchical modeling"
+    ],
+
+    "feature_engineering": [
+      "Time-based features: hour of day, day of week, time since last reading",
+      "Rolling window statistics: 5-point and 20-point moving averages",
+      "Lag features: previous 3 temperature readings for AR component",
+      "Sensor interaction terms: humidity × temp_lag, co × smoke",
+      "Device-specific baseline deviations"
+    ]
+  },
+
+  "expected_deliverables": {
+    "code_outputs": [
+      "Complete Bayesian model implementation in Python (PyMC/Stan)",
+      "Data preprocessing and EDA notebook",
+      "Model training script with convergence diagnostics",
+      "Posterior predictive sampling function",
+      "BMA ensemble prediction pipeline"
+    ],
+    
+    "visualizations": [
+      "Prior vs posterior distributions for key parameters",
+      "MCMC trace plots and autocorrelation plots",
+      "Posterior predictive check plots (observed vs simulated)",
+      "Prediction intervals on test set (fan charts)",
+      "Model comparison plots (WAIC/LOO scores)",
+      "Feature importance via posterior coefficient distributions",
+      "Device-specific effect estimates with credible intervals"
+    ],
+    
+    "statistical_reports": [
+      "Posterior summary statistics: mean, std, HDI intervals for all parameters",
+      "Convergence diagnostics: R-hat, ESS, divergences",
+      "Model comparison table with weights for BMA",
+      "Prediction performance metrics: MAE, RMSE, coverage of credible intervals",
+      "Uncertainty quantification analysis"
+    ],
+
+    "insights": [
+      "Which sensors are most predictive of temperature? (coefficient magnitudes)",
+      "How much does temperature vary across devices? (random effects variance)",
+      "What is the optimal prediction horizon given uncertainty?",
+      "Are there anomalous readings that deviate from posterior predictive?",
+      "How much does BMA improve over single best model?"
+    ]
+  },
+
+  "success_criteria": {
+    "model_quality": [
+      "R-hat < 1.01 for all parameters (convergence)",
+      "ESS > 400 per chain (sufficient sampling)",
+      "95% credible intervals cover true values 93-97% of time (calibration)",
+      "Posterior predictive checks show good fit to data distribution"
+    ],
+    "prediction_accuracy": [
+      "Test RMSE < 1.0°C (mean absolute error under 1 degree Celsius)",
+      "BMA ensemble outperforms individual models by >5%",
+      "Uncertainty intervals are well-calibrated (empirical vs nominal coverage)"
+    ],
+    "interpretability": [
+      "Clear identification of top 3 predictive sensors",
+      "Quantified device-specific effects with confidence",
+      "Transparent uncertainty quantification for decision-making"
+    ]
+  },
+
+  "prompt_for_llm": "You are an expert Bayesian statistician and data scientist. Using the IoT environmental sensor telemetry dataset described above (405k records, 9 features), build a comprehensive Bayesian prediction model for temperature forecasting. Follow the full Bayesian workflow:\n\n1. PRIOR SPECIFICATION: Define informative or weakly informative priors for regression coefficients, variance parameters, and device-level random effects. Justify your prior choices based on domain knowledge about environmental sensors.\n\n2. LIKELIHOOD DESIGN: Construct a probabilistic model linking sensor readings (humidity, CO, LPG, smoke, motion, light) to temperature. Consider hierarchical structure (device effects), temporal dependencies, and potential non-linearities.\n\n3. POSTERIOR INFERENCE: Use MCMC (PyMC or Stan) to sample from the posterior distribution P(θ|Data). Verify convergence with diagnostics (R-hat, trace plots, ESS). Interpret posterior distributions of key parameters.\n\n4. POSTERIOR PREDICTIVE DISTRIBUTION: Generate probabilistic forecasts with credible intervals. Create posterior predictive checks to validate model fit. Quantify prediction uncertainty.\n\n5. BAYESIAN MODEL AVERAGING: Fit 3-5 competing models, compute model weights via WAIC/LOO, and create ensemble predictions. Report which model structures receive highest posterior support.\n\nProvide complete implementation code, diagnostic plots, interpretation of results, and actionable insights about sensor relationships and prediction accuracy. Emphasize uncertainty quantification and probabilistic reasoning throughout."
+}
+
